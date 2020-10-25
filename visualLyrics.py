@@ -8,6 +8,10 @@
 # pip install matplotlib
 # pip install pandas
 #
+# pip install plotly
+from plotly.graph_objs import Scatter, Bar
+from plotly.subplots import make_subplots
+from plotly import offline
 
 import mysql.connector
 import numpy as np
@@ -53,7 +57,7 @@ print('\n\n')
 
 # select from database
 if choice == 'top':
-    select = "select * from artistTOT ORDER BY (uniqTOT/numbSongs) DESC LIMIT 6"
+    select = "select * from artistTOT ORDER BY (uniqTOT/numbSongs) DESC"
 elif choice == 'all':
     select = "select * from artistTOT ORDER by artist"
 else:
@@ -78,7 +82,6 @@ if choice == 'top' or choice == 'all':
         artists.append(artist[0])
         x_axis.append(artist[1])
         y_axis.append(artist[2])
-        plt.annotate(str(artist[0]), (artist[1], artist[2]))
 
         # get unique and total scores, round them
         uScore = round(artist[2]/artist[3], 1)
@@ -86,85 +89,35 @@ if choice == 'top' or choice == 'all':
         uwScore.append(uScore)
         twScore.append(tScore)
 
-    # plotting the data, with labels on axisssss
-    plt.plot(x_axis, y_axis, 'ro')
-    plt.xlabel('total words')
-    plt.ylabel('unique words')
-    plt.title('Artist Total Words vs. Unique Words')
-    #plt.show()
+    # plotting with plotly
+    # scatter plot, color gradient
+    scatterData = [{
+        'type': 'scatter',
+        'x': x_axis,
+        'y': y_axis,
+        'text': artists,
+        'mode': 'markers',
+        # 'size': 10,
+        'marker': {
+            'colorscale': 'Bluered',
+            'color': y_axis,
+            'colorbar': {'title': 'Value'},
+        }
+    }]
 
-    # bar graph hopefully
-    xLength = np.arange(len(artists))  # the label locations
-    width1 = 0.3  # the width of the bars
+    # layout as dictionary/json for graph object
+    scatLayout = {
+        'title': 'Artist Total Words vs. Unique Words',
+        'xaxis': {
+            'title': 'Total Words',
+        },
+        'yaxis': {
+            'title': 'Unique Words',
+        },
+    }
 
-    # sect up our rectangles/bars
-    fig1, ax1 = plt.subplots()
-    rectangs = ax1.bar(xLength + width1 / 4, uwScore, width1, label='unique words/# songs')
-    artistWords = []
-    i = 0
+    offline.plot({'data': scatterData, 'layout': scatLayout}, filename='lyricGraph.html')
 
-    for rectang in rectangs:
-        height = rectang.get_height()
-        artistWords.append(str(artists[i]) + '\n' + '(' + str(height) + ')')
-        i += 1
-
-    # Add some text for labels, title and custom x-axis tick labels, etc.
-    ax1.set_ylabel('Words per Song')
-    ax1.set_title('Unique Words per Song')
-    ax1.set_xticks(xLength)
-    ax1.set_xticklabels(artistWords)
-    ax1.legend()
-
-    fig1.tight_layout()
-    #plt.show()
-
-    # bar graph hopefully
-    x = np.arange(len(artists))  # the label locations
-    width = 0.3  # the width of the bars
-
-    # sect up our rectangles/bars
-    fig, ax = plt.subplots()
-    rects1 = ax.bar(x - width / 2, twScore, width, label='total words/# songs')
-    rects2 = ax.bar(x + width / 2, uwScore, width, label='unique words/# songs')
-
-    # Add some text for labels, title and custom x-axis tick labels, etc.
-    ax.set_ylabel('Words per Song')
-    ax.set_title('Total and Unique Words per Song')
-    ax.set_xticks(x)
-    unScore = []
-    artistScore = []
-    i = 0
-    for t in twScore:
-        roundScore = round((uwScore[i]/t) * 100, 2)
-        #percScore = str(roundScore * 100) + "%"
-        unScore.append(str(roundScore) + "%")
-        i += 1
-    i = 0
-    for ar in artists:
-        artistScore.append(str(ar) + "\n" + str(unScore[i]))
-        i += 1
-
-    ax.set_xticklabels(artistScore)
-    ax.legend()
-
-
-    def autolabel(rects):
-        """Attach a text label above each bar in *rects*, displaying its height."""
-        for rect in rects:
-            height = rect.get_height()
-            ax.annotate('{}'.format(height),
-                        xy=(rect.get_x() + rect.get_width() / 2, height),
-                        xytext=(0, 3),  # 3 points vertical offset
-                        textcoords="offset points",
-                        ha='center', va='bottom')
-
-
-    autolabel(rects1)
-    autolabel(rects2)
-
-    fig.tight_layout()
-
-    plt.show()
 
 # single artist
 else:
